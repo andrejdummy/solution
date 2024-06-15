@@ -1,0 +1,41 @@
+name: Run and Compare Output
+
+on:
+  workflow_dispatch: # This allows the workflow to be triggered manually
+
+jobs:
+  run_and_compare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install Dependencies
+        working-directory: mysterious-device
+        run: |
+          cargo build
+
+      - name: Prepare Files
+        working-directory: mysterious-device
+        env:
+          INPUT1: ${{ vars.INPUT1 }}
+          OUTPUT1: ${{ vars.OUTPUT2 }}
+        run: |
+          echo "${{ vars.INPUT1 }}" > input1.txt
+          echo "${{ vars.OUTPUT1 }}" | tr -d '\r' > expected_output1.txt
+
+      - name: Run Program with Input
+        working-directory: mysterious-device
+        run: |
+          cargo run < input1.txt | tr -d '\r' > actual_output1.txt
+
+      - name: Compare Output
+        working-directory: mysterious-device
+        run: |
+          diff expected_output1.txt actual_output1.txt || exit 1
